@@ -1,27 +1,11 @@
 """Gradio UI script."""
 
 import gradio as gr
-from typing import Any
 
 from data import open_glossary
+from ui_funcs import feedback_fn, solution_fn
 
-GradioUpdate = dict[str, Any]
-
-sss_tree, sections, subsections = open_glossary("glossario")
-S = sections[0]
-SS = subsections[S][0]
-
-
-def toggle_buttons_interactivity(done: bool) -> list[GradioUpdate]:
-    return [
-        gr.update(interactive=not done),  # solution btt
-        gr.update(interactive=done),  # correct btt
-        gr.update(interactive=done),  # error btt
-    ]
-
-
-def toggle_fn(sbtt: str):
-    return toggle_buttons_interactivity(sbtt == "Soluzione")
+glossary_tuple = open_glossary("glossario")
 
 
 def create_ui(
@@ -34,6 +18,16 @@ def create_ui(
         css=css,
         theme=gr.themes.Default(primary_hue="green"),
     ) as ui:
+        sss_tree = gr.State(glossary_tuple[0])
+        sections = gr.State(glossary_tuple[1])
+        subsections = gr.State(glossary_tuple[2])
+
+        S_id = gr.State(value=0)
+        SS_id = gr.State(value=0)
+        row_iat = gr.State(value=0)
+        S = gr.State(sections.value[S_id.value])
+        SS = gr.State(subsections.value[S.value][SS_id.value])
+
         gr.Markdown("# Ptili: Python Tool per Imparare L'Italiano 🇮🇹")
 
         with gr.Tab("Imparare"):
@@ -43,7 +37,7 @@ def create_ui(
                     gr.Markdown("Impari l'italiano! 👻")
                 with gr.Column():
                     card = gr.Textbox(
-                        value=sss_tree[S][SS]["italiano"].iat[0],
+                        value=sss_tree.value[S.value][SS.value]["italiano"].iat[row_iat.value],
                         label="Italiano 🇮🇹",
                         interactive=False,
                     )
@@ -63,19 +57,25 @@ def create_ui(
                         )
 
         show_btt.click(
-            toggle_fn,
-            inputs=[show_btt],
-            outputs=[show_btt, correct_btt, wrong_btt],
+            solution_fn,
+            inputs=[S, SS, row_iat, sss_tree],
+            outputs=[
+                show_btt, correct_btt, wrong_btt, card,
+            ],
         )
         correct_btt.click(
-            toggle_fn,
-            inputs=[correct_btt],
-            outputs=[show_btt, correct_btt, wrong_btt],
+            feedback_fn,
+            inputs=[S_id, SS_id, row_iat, S, SS, sections, subsections, sss_tree],
+            outputs=[
+                S_id, SS_id, row_iat, S, SS, show_btt, correct_btt, wrong_btt, card,
+            ],
         )
         wrong_btt.click(
-            toggle_fn,
-            inputs=[wrong_btt],
-            outputs=[show_btt, correct_btt, wrong_btt],
+            feedback_fn,
+            inputs=[S_id, SS_id, row_iat, S, SS, sections, subsections, sss_tree],
+            outputs=[
+                S_id, SS_id, row_iat, S, SS, show_btt, correct_btt, wrong_btt, card,
+            ],
         )
 
     return ui
