@@ -1,7 +1,10 @@
 """UI functions' script."""
 
 import gradio as gr
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from data import ReviewCameriere
 
 GradioUpdate = dict[str, Any]
 
@@ -14,39 +17,28 @@ def toggle_buttons_interactivity(done: bool) -> list[GradioUpdate]:
     ]
 
 
-def solution_fn(s, ss, row_iat, sss_tree):
-    return (
-        toggle_buttons_interactivity(done=True)
-        + [
-            gr.update(
-                value=sss_tree[s][ss]["traduzione"].iat[row_iat],
-                label="Traduzione 🇬🇧"
-            )
-        ]
-    )
+def solution_click(rc: "ReviewCameriere"):
+    def solution_fn():
+        return (
+            toggle_buttons_interactivity(done=True)
+            + [gr.update(value=rc.current_translation(), label="Traduzione 🇬🇧")]
+        )
+
+    return solution_fn
 
 
-def feedback_fn(s_id, ss_id, row_iat, s, ss, sections, subsections, sss_tree):
-    if row_iat + 1 < sss_tree[s][ss].shape[0]:
-        row_iat += 1
-    elif ss_id + 1 == len(subsections[s]):
-        s_id += 1
-        ss_id = 0
-        row_iat = 0
-        s = sections[s_id]
-        ss = subsections[s][ss_id]
-    else:
-        ss_id += 1
-        row_iat = 0
-        ss = subsections[s][ss_id]
+def feedback_click(rc: "ReviewCameriere"):
+    def feedback_fn():
+        ss_states_update = rc.next()
 
-    return (
-        [s_id, ss_id, row_iat, s, ss]
-        + toggle_buttons_interactivity(done=False)
-        + [
-            gr.update(
-                value=sss_tree[s][ss]["italiano"].iat[row_iat],
-                label="Italiano 🇮🇹"
-            )
-        ]
-    )
+        rc.ss_states.row_iat.value = ss_states_update[2]
+        rc.ss_states.S.value = ss_states_update[3]
+        rc.ss_states.SS.value = ss_states_update[4]
+
+        return (
+            ss_states_update
+            + toggle_buttons_interactivity(done=False)
+            + [gr.update(value=rc.current_word(), label="Italiano 🇮🇹")]
+        )
+
+    return feedback_fn

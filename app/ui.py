@@ -2,8 +2,9 @@
 
 import gradio as gr
 
-from data import open_glossary
-from ui_funcs import feedback_fn, solution_fn
+from data import ReviewCameriere, open_glossary
+from states import to_glossary_states, to_ss_states
+from ui_funcs import feedback_click, solution_click
 
 glossary_tuple = open_glossary("glossario")
 
@@ -18,15 +19,10 @@ def create_ui(
         css=css,
         theme=gr.themes.Default(primary_hue="green"),
     ) as ui:
-        sss_tree = gr.State(glossary_tuple[0])
-        sections = gr.State(glossary_tuple[1])
-        subsections = gr.State(glossary_tuple[2])
+        glossary_states = to_glossary_states(glossary_tuple)
+        ss_states = to_ss_states(glossary_states)
 
-        S_id = gr.State(value=0)
-        SS_id = gr.State(value=0)
-        row_iat = gr.State(value=0)
-        S = gr.State(sections.value[S_id.value])
-        SS = gr.State(subsections.value[S.value][SS_id.value])
+        rc = ReviewCameriere(glossary_states, ss_states)
 
         gr.Markdown("# Ptili: Python Tool per Imparare L'Italiano 🇮🇹")
 
@@ -37,7 +33,7 @@ def create_ui(
                     gr.Markdown("Impari l'italiano! 👻")
                 with gr.Column():
                     card = gr.Textbox(
-                        value=sss_tree.value[S.value][SS.value]["italiano"].iat[row_iat.value],
+                        value=rc.current_word(),
                         label="Italiano 🇮🇹",
                         interactive=False,
                     )
@@ -56,26 +52,23 @@ def create_ui(
                             interactive=False,
                         )
 
+        # Gradio Components
+        # sss_comps = glossary_states.to_list()
+        row_comps = ss_states.to_list()
+        review_comps = [show_btt, correct_btt, wrong_btt, card]
+
+        # Click events
         show_btt.click(
-            solution_fn,
-            inputs=[S, SS, row_iat, sss_tree],
-            outputs=[
-                show_btt, correct_btt, wrong_btt, card,
-            ],
+            solution_click(rc),
+            outputs=review_comps,
         )
         correct_btt.click(
-            feedback_fn,
-            inputs=[S_id, SS_id, row_iat, S, SS, sections, subsections, sss_tree],
-            outputs=[
-                S_id, SS_id, row_iat, S, SS, show_btt, correct_btt, wrong_btt, card,
-            ],
+            feedback_click(rc),
+            outputs=row_comps + review_comps,
         )
         wrong_btt.click(
-            feedback_fn,
-            inputs=[S_id, SS_id, row_iat, S, SS, sections, subsections, sss_tree],
-            outputs=[
-                S_id, SS_id, row_iat, S, SS, show_btt, correct_btt, wrong_btt, card,
-            ],
+            feedback_click(rc),
+            outputs=row_comps + review_comps,
         )
 
     return ui
