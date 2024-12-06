@@ -19,6 +19,7 @@ def toggle_buttons_interactivity(done: bool) -> list[GradioUpdate]:
 
 def solution_click(rc: "ReviewCameriere"):
     def solution_fn():
+        """Show solution button click function."""
         return (
             toggle_buttons_interactivity(done=True)
             + [gr.update(value=rc.current_translation(), label="Traduzione 🇬🇧")]
@@ -29,6 +30,7 @@ def solution_click(rc: "ReviewCameriere"):
 
 def feedback_click(rc: "ReviewCameriere"):
     def feedback_fn():
+        """Feedback button click function."""
         ss_states_update = rc.next()
 
         rc.ss_states.row_iat.value = ss_states_update[2]

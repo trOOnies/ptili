@@ -6,7 +6,7 @@ from data import ReviewCameriere, open_glossary
 from states import to_glossary_states, to_ss_states
 from ui_funcs import feedback_click, solution_click
 
-glossary_tuple = open_glossary("glossario")
+df, sections, subsections = open_glossary("glossario")
 
 
 def create_ui(
