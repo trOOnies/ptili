@@ -7,7 +7,7 @@ import pandas as pd
 
 if TYPE_CHECKING:
     from classes import Section, Subsection
-    from states import GlossaryStates, SSStates
+    from states import SSStates
 
 NAME_PATT = re.compile(r"^[a-z][a-z0-9\-\_]*[a-z0-9]$", re.IGNORECASE)
 
@@ -28,14 +28,16 @@ def load_glossary_df(name: str) -> pd.DataFrame:
     return df
 
 
-def process_sections(
+def create_sections_subsections(
     df: pd.DataFrame
 ) -> tuple[
-    pd.DataFrame,
     list["Section"],
     dict["Section", list["Subsection"]],
+    dict["Section", pd.DataFrame]
 ]:
-    """Process sections. df must already be alphabetically ordered."""
+    """Create sections and subsections of the vocabulary.
+    NOTE: df must already be alphabetically ordered.
+    """
     # TODO: Check if new function works
 
     # Index: Start of tuple (s, ss) in glossary df
@@ -49,20 +51,42 @@ def process_sections(
     ixs = df_s.index.to_list()
     ixs_next = ixs[1:] + [-1]
 
-    aux = {
+    aux_dfs = {
         s: df_sss.iloc[ix:(n_ss if ix_next == -1 else ix_next)]
         for s, ix, ix_next in zip(sections, ixs, ixs_next)
     }
-    subsections = {s: df_aux["sottosezione"].to_list() for s, df_aux in aux.items()}
+    subsections = {s: df_aux["sottosezione"].to_list() for s, df_aux in aux_dfs.items()}
 
-    # We modify the original DataFrame with the information we now know
-    orig_ixs = {s: df_aux.index.to_list() for s, df_aux in aux.items()}
+    return sections, subsections, aux_dfs
+
+
+def get_ixs(
+    aux_dfs: dict["Section", pd.DataFrame]
+) -> tuple[dict["Section", list[int]], list[int], list[int]]:
+    """Get indices for the add_ids_to_vocab_df function."""
+    # TODO: Check if new function works
+    orig_ixs = {s: df_aux.index.to_list() for s, df_aux in aux_dfs.items()}
     start_ixs = [s_ixs[0] for s_ixs in orig_ixs.values()]
     next_start_ixs = start_ixs[1:] + [-1]
+    return orig_ixs, start_ixs, next_start_ixs
 
+
+def add_ids_to_vocab_df(
+    df: pd.DataFrame,
+    orig_ixs: dict["Section", list[int]],
+    start_ixs: list[int],
+    next_start_ixs: list[int],
+) -> pd.DataFrame:
+    """Add section and subsection ids to vocabulary df.
+    NOTE: df must already be alphabetically ordered.
+    """
+    # TODO: Check if new function works
+
+    df = df.drop(["sezione", "sottosezione"], axis=1)
     df.loc[:, "sezione_id"] = -1
     df.loc[:, "sottosezione_id"] = -1
 
+    # We modify the original DataFrame with the information we now know
     zip_loop = enumerate(zip(orig_ixs.values(), start_ixs, next_start_ixs))
     for s_id, (ss_ixs, start_ix, next_start_ix) in zip_loop:
         end_ix = df.shape[0] if next_start_ix == -1 else next_start_ix
@@ -76,7 +100,7 @@ def process_sections(
     assert not (df["sezione_id"] == -1).any()
     assert not (df["sottosezione_id"] == -1).any()
 
-    return df, sections, subsections
+    return df
 
 
 # * Functions
@@ -92,7 +116,9 @@ def open_glossary(
     CSV should have the columns: italiano, traduzione, sezione, sottosezione.
     """
     df = load_glossary_df(name)
-    df, sections, subsections = process_sections(df)
+    sections, subsections, aux_dfs = create_sections_subsections(df)
+    orig_ixs, start_ixs, next_start_ixs = get_ixs(aux_dfs)
+    df = add_ids_to_vocab_df(df, orig_ixs, start_ixs, next_start_ixs)
     return df, sections, subsections
 
 
@@ -100,11 +126,15 @@ class ReviewCameriere:
     """Sets the order of the review flashcards."""
     def __init__(
         self,
-        glossary_states: "GlossaryStates",
+        df_vocab: pd.DataFrame,
+        sections: list["Section"],
+        subsections: dict["Section", list["Subsection"]],
         ss_states: "SSStates",
         ordering: Literal["alphabetic"],
     ):
-        self.glossary_states = glossary_states
+        self.df_vocab = df_vocab
+        self.sections = sections
+        self.subsections = subsections
         self.ss_states = ss_states
 
         if ordering == "alphabetic":
@@ -115,13 +145,11 @@ class ReviewCameriere:
 
     def current_word(self) -> str:
         """Get current word to review."""
-        sss_tree = self.glossary_states.sss_tree.value
-        return self.ss_states.get_word(sss_tree)
+        return self.ss_states.get_word(self.df_vocab)
 
     def current_translation(self) -> str:
         """Get translation of the current word."""
-        sss_tree = self.glossary_states.sss_tree.value
-        return self.ss_states.get_translation(sss_tree)
+        return self.ss_states.get_translation(self.df_vocab)
 
     def next(self) -> list:
         """Choose next word to review and return the relevant Gradio States."""

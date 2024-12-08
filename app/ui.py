@@ -3,10 +3,10 @@
 import gradio as gr
 
 from data import ReviewCameriere, open_glossary
-from states import to_glossary_states, to_ss_states
+from states import to_ss_states
 from ui_funcs import feedback_click, solution_click
 
-df, sections, subsections = open_glossary("glossario")
+df_vocab, sections, subsections = open_glossary("glossario")
 
 
 def create_ui(
@@ -19,10 +19,14 @@ def create_ui(
         css=css,
         theme=gr.themes.Default(primary_hue="green"),
     ) as ui:
-        glossary_states = to_glossary_states(glossary_tuple)
-        ss_states = to_ss_states(glossary_states)
-
-        rc = ReviewCameriere(glossary_states, ss_states)
+        ss_states = to_ss_states(df_vocab, sections, subsections)
+        rc = ReviewCameriere(
+            df_vocab,
+            sections,
+            subsections,
+            ss_states,
+            ordering="alphabetic",
+        )
 
         gr.Markdown("# Ptili: Python Tool per Imparare L'Italiano 🇮🇹")
 

@@ -33,9 +33,9 @@ def feedback_click(rc: "ReviewCameriere"):
         """Feedback button click function."""
         ss_states_update = rc.next()
 
-        rc.ss_states.row_iat.value = ss_states_update[2]
-        rc.ss_states.S.value = ss_states_update[3]
-        rc.ss_states.SS.value = ss_states_update[4]
+        rc.ss_states.row_iat.value = ss_states_update[0]
+        rc.ss_states.S.value = ss_states_update[1]
+        rc.ss_states.SS.value = ss_states_update[2]
 
         return (
             ss_states_update
