@@ -143,6 +143,11 @@ class ReviewCameriere:
         else:
             raise ValueError(f"Ordering not recognized: '{ordering}'")
 
+    def get_ss(self, s_id: int, ss_id: int) -> tuple["Section", "Subsection"]:
+        """Get section and subsection."""
+        s = self.sections[s_id]
+        return s, self.subsections[s][ss_id]
+
     def current_word(self) -> str:
         """Get current word to review."""
         return self.ss_states.get_word(self.df_vocab)

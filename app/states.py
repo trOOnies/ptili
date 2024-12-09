@@ -1,7 +1,7 @@
 """Script for Gradio States."""
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from gradio import State as St
 
@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 @dataclass
 class SSStates:
     """Section-Subsection Gradio States."""
-    row_iat: St[int]
-    S: St[dict[Literal["id", "value"], int | "Section"]]
-    SS: St[dict[Literal["id", "value"], int | "Subsection"]]
+    row_iat: St  # int
+    S: St        # dict[Literal["id", "value"], int | "Section"]
+    SS: St       # dict[Literal["id", "value"], int | "Subsection"]
 
     def to_list(self) -> list[St]:
         return [self.row_iat, self.S, self.SS]
@@ -40,10 +40,10 @@ def to_ss_states(
     row_iat = St(0)
     row = df_vocab.iloc[row_iat.value]
 
-    s_id = row.at["sezione_id"]
-    ss_id = row.at["sottosezione_id"]
+    s_id = int(row.at["sezione_id"])
+    ss_id = int(row.at["sottosezione_id"])
 
     S = St({"id": s_id, "value": sections[s_id]})
-    SS = St({"id": ss_id, "value": subsections[s_id][ss_id]})
+    SS = St({"id": ss_id, "value": subsections[S.value["value"]][ss_id]})
 
     return SSStates(row_iat, S, SS)
