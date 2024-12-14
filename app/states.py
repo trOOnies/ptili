@@ -24,11 +24,9 @@ class SSStates:
     def get_values(self) -> tuple:
         return tuple(state.value for state in self.to_list())
 
-    def get_word(self, df_vocab: "DataFrame") -> str:
-        return df_vocab["italiano"].iat[self.row_iat.value]
-
-    def get_translation(self, df_vocab: "DataFrame") -> str:
-        return df_vocab["traduzione"].iat[self.row_iat.value]
+    def get_word(self, df_vocab: "DataFrame", is_foreign: bool) -> str:
+        col = "italiano" if is_foreign else "traduzione"
+        return df_vocab[col].iat[self.row_iat.value]
 
 
 def to_ss_states(

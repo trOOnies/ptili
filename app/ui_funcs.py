@@ -8,6 +8,9 @@ if TYPE_CHECKING:
 
 GradioUpdate = dict[str, Any]
 
+ITA_LABEL = "Italiano 🇮🇹"
+TRAD_LABEL = "Traduzione 🇬🇧"
+
 
 def toggle_buttons_interactivity(done: bool) -> list[GradioUpdate]:
     return [
@@ -22,7 +25,12 @@ def solution_click(rc: "ReviewCameriere"):
         """Show solution button click function."""
         return (
             toggle_buttons_interactivity(done=True)
-            + [gr.update(value=rc.current_translation(), label="Traduzione 🇬🇧")]
+            + [
+                gr.update(
+                    value=rc.current_translation(),
+                    label=TRAD_LABEL if rc.foreign_in_front else ITA_LABEL
+                )
+            ]
         )
 
     return solution_fn
@@ -40,7 +48,12 @@ def feedback_click(rc: "ReviewCameriere"):
         return (
             ss_states_update
             + toggle_buttons_interactivity(done=False)
-            + [gr.update(value=rc.current_word(), label="Italiano 🇮🇹")]
+            + [
+                gr.update(
+                    value=rc.current_word(),
+                    label=ITA_LABEL if rc.foreign_in_front else TRAD_LABEL
+                )
+            ]
         )
 
     return feedback_fn

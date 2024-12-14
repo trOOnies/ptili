@@ -86,16 +86,19 @@ def add_ids_to_vocab_df(
     df.loc[:, "sezione_id"] = -1
     df.loc[:, "sottosezione_id"] = -1
 
+    sid_col_iat = df.columns.get_loc("sezione_id")
+    ssid_col_iat = df.columns.get_loc("sottosezione_id")
+
     # We modify the original DataFrame with the information we now know
     zip_loop = enumerate(zip(orig_ixs.values(), start_ixs, next_start_ixs))
     for s_id, (ss_ixs, start_ix, next_start_ix) in zip_loop:
         end_ix = df.shape[0] if next_start_ix == -1 else next_start_ix
-        df["sezione_id"].iloc[start_ix:end_ix] = s_id
+        df.iloc[start_ix:end_ix, sid_col_iat] = s_id
 
         next_ss_ixs = ss_ixs[1:] + [-1]
         for ss_id, (ss_ix, next_ss_ix) in enumerate(zip(ss_ixs, next_ss_ixs)):
             ss_end_ix = end_ix if next_ss_ix == -1 else next_ss_ix
-            df["sottosezione_id"].iloc[ss_ix:ss_end_ix] = ss_id
+            df.iloc[ss_ix:ss_end_ix, ssid_col_iat] = ss_id
 
     assert not (df["sezione_id"] == -1).any()
     assert not (df["sottosezione_id"] == -1).any()
@@ -131,11 +134,13 @@ class ReviewCameriere:
         subsections: dict["Section", list["Subsection"]],
         ss_states: "SSStates",
         ordering: Literal["alphabetic"],
+        foreign_in_front: bool,
     ):
         self.df_vocab = df_vocab
         self.sections = sections
         self.subsections = subsections
         self.ss_states = ss_states
+        self.foreign_in_front = foreign_in_front
 
         if ordering == "alphabetic":
             from flashcards import alphabetic_ordering
@@ -150,11 +155,11 @@ class ReviewCameriere:
 
     def current_word(self) -> str:
         """Get current word to review."""
-        return self.ss_states.get_word(self.df_vocab)
+        return self.ss_states.get_word(self.df_vocab, is_foreign=self.foreign_in_front)
 
     def current_translation(self) -> str:
         """Get translation of the current word."""
-        return self.ss_states.get_translation(self.df_vocab)
+        return self.ss_states.get_word(self.df_vocab, is_foreign=not self.foreign_in_front)
 
     def next(self) -> list:
         """Choose next word to review and return the relevant Gradio States."""

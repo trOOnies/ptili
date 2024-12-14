@@ -4,9 +4,10 @@ import gradio as gr
 
 from data import ReviewCameriere, open_glossary
 from states import to_ss_states
-from ui_funcs import feedback_click, solution_click
+from ui_funcs import feedback_click, solution_click, ITA_LABEL, TRAD_LABEL
 
 df_vocab, sections, subsections = open_glossary("glossario")
+foreign_in_front = False
 
 
 def create_ui(
@@ -26,6 +27,7 @@ def create_ui(
             subsections,
             ss_states,
             ordering="alphabetic",
+            foreign_in_front=foreign_in_front,
         )
 
         gr.Markdown("# Ptili: Python Tool per Imparare L'Italiano 🇮🇹")
@@ -38,7 +40,7 @@ def create_ui(
                 with gr.Column():
                     card = gr.Textbox(
                         value=rc.current_word(),
-                        label="Italiano 🇮🇹",
+                        label=ITA_LABEL if foreign_in_front else TRAD_LABEL,
                         interactive=False,
                     )
                 with gr.Column():
