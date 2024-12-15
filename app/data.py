@@ -19,9 +19,13 @@ def load_glossary_df(name: str) -> pd.DataFrame:
     prev_len = df.shape[0]
 
     df = df.drop_duplicates("italiano", keep="first", ignore_index=True)
-    print(f"DELETED {prev_len - df.shape[0]} DUPLICATED ROWS")
+    duplicated_rows = prev_len - df.shape[0]
+    print(f"DELETED {duplicated_rows} DUPLICATED ROWS")
 
     df = df.sort_values(["sezione", "sottosezione", "italiano"], ignore_index=True)
+    if duplicated_rows > 0:
+        df[["italiano", "traduzione", "sezione", "sottosezione"]].to_csv("new_glossario.csv", index=False)
+        print("Glossary without duplicates saved.")
     return df
 
 
