@@ -16,6 +16,7 @@ def toggle_buttons_interactivity(done: bool) -> list[GradioUpdate]:
     return [
         gr.update(interactive=not done),  # solution btt
         gr.update(interactive=done),  # correct btt
+        gr.update(interactive=done),  # neutral btt
         gr.update(interactive=done),  # error btt
     ]
 
@@ -36,10 +37,14 @@ def solution_click(rc: "ReviewCameriere"):
     return solution_fn
 
 
-def feedback_click(rc: "ReviewCameriere", is_error: bool):
+def feedback_click(
+    rc: "ReviewCameriere",
+    is_error: bool,
+    update: bool,
+):
     def feedback_fn():
         """Feedback button click function."""
-        ss_states_update = rc.next(is_error, update=True)
+        ss_states_update = rc.next(is_error, update=update)
 
         rc.ss_states.row_iat.value = ss_states_update[0]
         rc.ss_states.S.value = ss_states_update[1]

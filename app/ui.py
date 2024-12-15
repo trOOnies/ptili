@@ -55,6 +55,10 @@ def create_ui(
                             variant="primary",
                             interactive=False,
                         )
+                        neutral_btt = gr.Button(
+                            "Più o meno 😐",
+                            interactive=False,
+                        )
                         wrong_btt = gr.Button(
                             "Ho sbagliato... 😢",
                             variant="stop",
@@ -64,7 +68,7 @@ def create_ui(
         # Gradio Components
         # sss_comps = glossary_states.to_list()
         row_comps = ss_states.to_list()
-        review_comps = [show_btt, correct_btt, wrong_btt, card]
+        review_comps = [show_btt, correct_btt, neutral_btt, wrong_btt, card]
 
         # Click events
         show_btt.click(
@@ -72,11 +76,15 @@ def create_ui(
             outputs=review_comps,
         )
         correct_btt.click(
-            feedback_click(rc, is_error=False),
+            feedback_click(rc, is_error=False, update=True),
+            outputs=row_comps + review_comps,
+        )
+        neutral_btt.click(
+            feedback_click(rc, is_error=False, update=False),
             outputs=row_comps + review_comps,
         )
         wrong_btt.click(
-            feedback_click(rc, is_error=True),
+            feedback_click(rc, is_error=True, update=True),
             outputs=row_comps + review_comps,
         )
 
