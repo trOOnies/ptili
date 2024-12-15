@@ -8,9 +8,9 @@ with open("app/styles.css") as f:
     CSS = f.read()
 
 
-def main() -> None:
+def main(glossary_name: str, ordering: str) -> None:
     """Main function."""
-    ui = create_ui(CSS)
+    ui, df_vocab = create_ui(CSS, glossary_name, ordering)
 
     with open("app/ascii_art.txt") as f:
         ascii_art = f.readlines()
@@ -25,6 +25,13 @@ def main() -> None:
 
     ui.launch()
 
+    df_history = df_vocab[["italiano", "ok", "not_ok", "last_ok", "last_not_ok"]]
+    df_history = df_history[df_history[["ok", "not_ok"]].sum(axis=1) > 0]
+    df_history.to_csv(f"history/{glossary_name}.csv", index=False)
+    print("History saved succesfully.")
+
+    print("Ci vediamo dopo! 👋")
+
 
 if __name__ == "__main__":
-    main()
+    main(glossary_name="glossario", ordering="net_errors")

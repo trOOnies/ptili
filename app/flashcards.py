@@ -1,17 +1,23 @@
 """Script for flashcards code."""
 
+from typing import TYPE_CHECKING
 
-def alphabetic_ordering(rc) -> list:
+import numpy as np
+
+if TYPE_CHECKING:
+    from numpy import ndarray
+    from pandas import DataFrame
+
+
+def alphabetic_ordering(df_vocab: "DataFrame") -> "ndarray":
     """Flashcard ordering based on alphabetic ordering."""
-    row_iat = rc.ss_states.row_iat.value + 1
-    row = rc.df_vocab.iloc[row_iat]
+    return df_vocab.index.values.copy()
 
-    s_id = row["sezione_id"]
-    ss_id = row["sottosezione_id"]
-    s, ss = rc.get_ss(s_id, ss_id)
 
-    return [
-        row_iat,
-        {"id": s_id, "value": s},
-        {"id": ss_id, "value": ss},
-    ]
+def net_errors_ordering(df_vocab: "DataFrame") -> "ndarray":
+    """Flashcard ordering based on net errors."""
+    df = df_vocab[["ok", "not_ok"]].copy()
+    df["net_errors"] = df["not_ok"] - df["ok"]
+    df["random"] = np.random.rand(df.shape[0])
+    df = df.sort_values(["net_errors", "random"], ascending=False)
+    return df.index.values.copy()

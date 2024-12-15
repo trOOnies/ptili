@@ -4,7 +4,7 @@ import gradio as gr
 from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from data import ReviewCameriere
+    from review_cameriere import ReviewCameriere
 
 GradioUpdate = dict[str, Any]
 
@@ -27,7 +27,7 @@ def solution_click(rc: "ReviewCameriere"):
             toggle_buttons_interactivity(done=True)
             + [
                 gr.update(
-                    value=rc.current_translation(),
+                    value=rc.current_back(),
                     label=TRAD_LABEL if rc.foreign_in_front else ITA_LABEL
                 )
             ]
@@ -36,10 +36,10 @@ def solution_click(rc: "ReviewCameriere"):
     return solution_fn
 
 
-def feedback_click(rc: "ReviewCameriere"):
+def feedback_click(rc: "ReviewCameriere", is_error: bool):
     def feedback_fn():
         """Feedback button click function."""
-        ss_states_update = rc.next()
+        ss_states_update = rc.next(is_error, update=True)
 
         rc.ss_states.row_iat.value = ss_states_update[0]
         rc.ss_states.S.value = ss_states_update[1]
@@ -50,7 +50,7 @@ def feedback_click(rc: "ReviewCameriere"):
             + toggle_buttons_interactivity(done=False)
             + [
                 gr.update(
-                    value=rc.current_word(),
+                    value=rc.current_front(),
                     label=ITA_LABEL if rc.foreign_in_front else TRAD_LABEL
                 )
             ]

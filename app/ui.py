@@ -2,18 +2,21 @@
 
 import gradio as gr
 
-from data import ReviewCameriere, open_glossary
+from data import open_glossary
+from review_cameriere import ReviewCameriere
 from states import to_ss_states
 from ui_funcs import feedback_click, solution_click, ITA_LABEL, TRAD_LABEL
-
-df_vocab, sections, subsections = open_glossary("glossario")
-foreign_in_front = False
 
 
 def create_ui(
     css: str,
+    glossary_name: str,
+    ordering: str,
 ) -> gr.Blocks:
     """Create the Gradio Blocks-based UI."""
+    df_vocab, sections, subsections = open_glossary(glossary_name)
+    foreign_in_front = False
+
     with gr.Blocks(
         title="PTILI",
         fill_width=True,
@@ -26,7 +29,7 @@ def create_ui(
             sections,
             subsections,
             ss_states,
-            ordering="alphabetic",
+            ordering=ordering,
             foreign_in_front=foreign_in_front,
         )
 
@@ -39,7 +42,7 @@ def create_ui(
                     gr.Markdown("Impari l'italiano! 👻")
                 with gr.Column():
                     card = gr.Textbox(
-                        value=rc.current_word(),
+                        value=rc.current_front(),
                         label=ITA_LABEL if foreign_in_front else TRAD_LABEL,
                         interactive=False,
                     )
@@ -69,12 +72,12 @@ def create_ui(
             outputs=review_comps,
         )
         correct_btt.click(
-            feedback_click(rc),
+            feedback_click(rc, is_error=False),
             outputs=row_comps + review_comps,
         )
         wrong_btt.click(
-            feedback_click(rc),
+            feedback_click(rc, is_error=True),
             outputs=row_comps + review_comps,
         )
 
-    return ui
+    return ui, df_vocab
