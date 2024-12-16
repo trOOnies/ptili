@@ -7,8 +7,6 @@ from review_cameriere import ReviewCameriere
 from states import to_ss_states
 from ui_funcs import feedback_click, solution_click, ITA_LABEL, TRAD_LABEL
 
-df_vocab, sections, subsections, sss_counts = open_glossary("glossario")
-
 
 def create_ui(
     css: str,
@@ -16,7 +14,7 @@ def create_ui(
     ordering: str,
 ) -> gr.Blocks:
     """Create the Gradio Blocks-based UI."""
-    df_vocab, sections, subsections = open_glossary(glossary_name)
+    df_vocab, sections, subsections, sss_counts = open_glossary(glossary_name)
     foreign_in_front = False
 
     with gr.Blocks(
