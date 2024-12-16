@@ -2,17 +2,23 @@
 
 import gradio as gr
 
-from data import ReviewCameriere, open_glossary
+from data import open_glossary
+from review_cameriere import ReviewCameriere
 from states import to_ss_states
-from ui_funcs import feedback_click, solution_click
+from ui_funcs import feedback_click, solution_click, ITA_LABEL, TRAD_LABEL
 
 df_vocab, sections, subsections, sss_counts = open_glossary("glossario")
 
 
 def create_ui(
     css: str,
+    glossary_name: str,
+    ordering: str,
 ) -> gr.Blocks:
     """Create the Gradio Blocks-based UI."""
+    df_vocab, sections, subsections = open_glossary(glossary_name)
+    foreign_in_front = False
+
     with gr.Blocks(
         title="PTILI",
         fill_width=True,
@@ -25,7 +31,8 @@ def create_ui(
             sections,
             subsections,
             ss_states,
-            ordering="alphabetic",
+            ordering=ordering,
+            foreign_in_front=foreign_in_front,
         )
 
         gr.Markdown("# Ptili: Python Tool per Imparare L'Italiano 🇮🇹")
@@ -43,8 +50,8 @@ def create_ui(
                         )
                 with gr.Column():
                     card = gr.Textbox(
-                        value=rc.current_word(),
-                        label="Italiano 🇮🇹",
+                        value=rc.current_front(),
+                        label=ITA_LABEL if foreign_in_front else TRAD_LABEL,
                         interactive=False,
                     )
                 with gr.Column():
@@ -56,6 +63,10 @@ def create_ui(
                             variant="primary",
                             interactive=False,
                         )
+                        neutral_btt = gr.Button(
+                            "Più o meno 😐",
+                            interactive=False,
+                        )
                         wrong_btt = gr.Button(
                             "Ho sbagliato... 😢",
                             variant="stop",
@@ -65,7 +76,7 @@ def create_ui(
         # Gradio Components
         # sss_comps = glossary_states.to_list()
         row_comps = ss_states.to_list()
-        review_comps = [show_btt, correct_btt, wrong_btt, card]
+        review_comps = [show_btt, correct_btt, neutral_btt, wrong_btt, card]
 
         # Click events
         show_btt.click(
@@ -73,12 +84,16 @@ def create_ui(
             outputs=review_comps,
         )
         correct_btt.click(
-            feedback_click(rc),
+            feedback_click(rc, is_error=False, update=True),
+            outputs=row_comps + review_comps,
+        )
+        neutral_btt.click(
+            feedback_click(rc, is_error=False, update=False),
             outputs=row_comps + review_comps,
         )
         wrong_btt.click(
-            feedback_click(rc),
+            feedback_click(rc, is_error=True, update=True),
             outputs=row_comps + review_comps,
         )
 
-    return ui
+    return ui, df_vocab
