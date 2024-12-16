@@ -6,7 +6,7 @@ from data import ReviewCameriere, open_glossary
 from states import to_ss_states
 from ui_funcs import feedback_click, solution_click
 
-df_vocab, sections, subsections = open_glossary("glossario")
+df_vocab, sections, subsections, sss_counts = open_glossary("glossario")
 
 
 def create_ui(
@@ -34,7 +34,13 @@ def create_ui(
 
             with gr.Row(visible=True):
                 with gr.Column():
-                    gr.Markdown("Impari l'italiano! 👻")
+                    for s_id, s in enumerate(sections):
+                        gr.CheckboxGroup(
+                            subsections[s],
+                            value=subsections[s],
+                            label=f"{s} ({sum(sss_counts[s_id])})",
+                            interactive=True,
+                        )
                 with gr.Column():
                     card = gr.Textbox(
                         value=rc.current_word(),

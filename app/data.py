@@ -76,7 +76,8 @@ def add_ids_to_vocab_df(
     orig_ixs: dict["Section", list[int]],
     start_ixs: list[int],
     next_start_ixs: list[int],
-) -> pd.DataFrame:
+    subsections: dict["Section", list["Subsection"]],
+) -> tuple[pd.DataFrame, list[list[int]]]:
     """Add section and subsection ids to vocabulary df.
     NOTE: df must already be alphabetically ordered.
     """
@@ -85,6 +86,11 @@ def add_ids_to_vocab_df(
     df = df.drop(["sezione", "sottosezione"], axis=1)
     df.loc[:, "sezione_id"] = -1
     df.loc[:, "sottosezione_id"] = -1
+
+    sss_counts = [
+        len(ss_list) * [0]
+        for ss_list in subsections.values()
+    ]
 
     # We modify the original DataFrame with the information we now know
     zip_loop = enumerate(zip(orig_ixs.values(), start_ixs, next_start_ixs))
@@ -96,11 +102,12 @@ def add_ids_to_vocab_df(
         for ss_id, (ss_ix, next_ss_ix) in enumerate(zip(ss_ixs, next_ss_ixs)):
             ss_end_ix = end_ix if next_ss_ix == -1 else next_ss_ix
             df["sottosezione_id"].iloc[ss_ix:ss_end_ix] = ss_id
+            sss_counts[s_id][ss_id] = ss_end_ix - ss_ix
 
     assert not (df["sezione_id"] == -1).any()
     assert not (df["sottosezione_id"] == -1).any()
 
-    return df
+    return df, sss_counts
 
 
 # * Functions
@@ -109,8 +116,10 @@ def add_ids_to_vocab_df(
 def open_glossary(
     name: str,
 ) -> tuple[
+    pd.DataFrame,
     list["Section"],
     dict["Section", list["Subsection"]],
+    list[list[int]],
 ]:
     """Open glossary file and convert it into Pythonic classes.
     CSV should have the columns: italiano, traduzione, sezione, sottosezione.
@@ -118,8 +127,8 @@ def open_glossary(
     df = load_glossary_df(name)
     sections, subsections, aux_dfs = create_sections_subsections(df)
     orig_ixs, start_ixs, next_start_ixs = get_ixs(aux_dfs)
-    df = add_ids_to_vocab_df(df, orig_ixs, start_ixs, next_start_ixs)
-    return df, sections, subsections
+    df, sss_counts = add_ids_to_vocab_df(df, orig_ixs, start_ixs, next_start_ixs, subsections)
+    return df, sections, subsections, sss_counts
 
 
 class ReviewCameriere:
