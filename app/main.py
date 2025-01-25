@@ -1,7 +1,9 @@
 """Main script."""
 
 # TODO: argparse
+
 from colors import GREEN, RED, colored
+from options import ORDERING
 from ui import create_ui
 
 with open("app/styles.css") as f:
@@ -34,4 +36,4 @@ def main(glossary_name: str, ordering: str) -> None:
 
 
 if __name__ == "__main__":
-    main(glossary_name="glossario", ordering="net_errors")
+    main(glossary_name="glossario", ordering=ORDERING.RANDOM)

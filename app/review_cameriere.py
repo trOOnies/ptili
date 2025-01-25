@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Literal
 
 import pandas as pd
 
+from options import ORDERING
+
 if TYPE_CHECKING:
     from numpy import ndarray
 
@@ -32,12 +34,18 @@ class ReviewCameriere:
         self.ss_states = ss_states
         self.foreign_in_front = foreign_in_front
 
-        if ordering == "alphabetic":
+        if ordering == ORDERING.RANDOM:
+            from flashcards import random_ordering
+            self.get_order = random_ordering
+        elif ordering == ORDERING.ALPHABETIC:
             from flashcards import alphabetic_ordering
             self.get_order = alphabetic_ordering
-        elif ordering == "net_errors":
+        elif ordering == ORDERING.NET_ERRORS:
             from flashcards import net_errors_ordering
             self.get_order = net_errors_ordering
+        elif ordering == ORDERING.NET_ERRORS_WEIGHTED:
+            from flashcards import make_net_weighted_errors_ordering
+            self.get_order = make_net_weighted_errors_ordering(randomness=0.33)
         else:
             raise ValueError(f"Ordering not recognized: '{ordering}'")
 
