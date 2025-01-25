@@ -36,4 +36,4 @@ def main(glossary_name: str, ordering: str) -> None:
 
 
 if __name__ == "__main__":
-    main(glossary_name="glossario", ordering=ORDERING.RANDOM)
+    main(glossary_name="glossario", ordering=ORDERING.NET_ERRORS_WEIGHTED)

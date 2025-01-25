@@ -45,7 +45,7 @@ class ReviewCameriere:
             self.get_order = net_errors_ordering
         elif ordering == ORDERING.NET_ERRORS_WEIGHTED:
             from flashcards import make_net_weighted_errors_ordering
-            self.get_order = make_net_weighted_errors_ordering(randomness=0.33)
+            self.get_order = make_net_weighted_errors_ordering(randomness_sigma=0.33)
         else:
             raise ValueError(f"Ordering not recognized: '{ordering}'")
 
