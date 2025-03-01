@@ -2,10 +2,10 @@
 
 import gradio as gr
 
-from data import open_glossary
-from review_cameriere import ReviewCameriere
-from states import to_ss_states
-from ui_funcs import feedback_click, solution_click, ITA_LABEL, TRAD_LABEL
+from components.review_cameriere import ReviewCameriere
+from components.states import to_ss_states
+from components.ui_funcs import feedback_click, solution_click, ITA_LABEL, TRAD_LABEL
+from data.loading import open_glossary
 
 
 def create_ui(
@@ -39,13 +39,7 @@ def create_ui(
 
             with gr.Row(visible=True):
                 with gr.Column():
-                    for s_id, s in enumerate(sections):
-                        gr.CheckboxGroup(
-                            subsections[s],
-                            value=subsections[s],
-                            label=f"{s} ({sum(sss_counts[s_id])})",
-                            interactive=True,
-                        )
+                    aux = gr.Textbox()
                 with gr.Column():
                     card = gr.Textbox(
                         value=rc.current_front(),
@@ -93,5 +87,15 @@ def create_ui(
             feedback_click(rc, is_error=True, update=True),
             outputs=row_comps + review_comps,
         )
+
+        with gr.Tab("Configure"):
+            with gr.Column():
+                for s_id, s in enumerate(sections):
+                    gr.CheckboxGroup(
+                        subsections[s],
+                        value=subsections[s],
+                        label=f"{s} ({sum(sss_counts[s_id])})",
+                        interactive=True,
+                    )
 
     return ui, df_vocab

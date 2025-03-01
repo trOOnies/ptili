@@ -4,7 +4,7 @@ import gradio as gr
 from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from review_cameriere import ReviewCameriere
+    from components.review_cameriere import ReviewCameriere
 
 GradioUpdate = dict[str, Any]
 

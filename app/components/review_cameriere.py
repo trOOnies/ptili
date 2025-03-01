@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from numpy import ndarray
 
     from classes import Section, Subsection
-    from states import SSStates
+    from components.states import SSStates
 
 TODAY = dt.date.today()
 PD_TODAY = pd.to_datetime(TODAY)

@@ -1,31 +1,46 @@
-"""Script for data handling."""
+"""Module for data handling."""
 
-import datetime as dt
 import os
 import re
 from typing import TYPE_CHECKING
 
 import pandas as pd
 
+from data.utils import (
+    check_glossary_duplicates,
+    check_history_duplicates,
+    concat_langs,
+    handle_ok_nulls,
+    loop_add_ids,
+    init_empty_history,
+    init_sss_counts,
+    init_vocab_df,
+    process_sections,
+    process_sections_subsections,
+)
+from options import COLUMN  # TODO
+
 if TYPE_CHECKING:
     from classes import Section, Subsection
 
 NAME_PATT = re.compile(r"^[a-z][a-z0-9\-\_]*[a-z0-9]$", re.IGNORECASE)
+GLOSSARY_COLS = [COLUMN.ITALIAN, COLUMN.CEFR, COLUMN.SPANISH, COLUMN.ENGLISH, COLUMN.SECTION, COLUMN.SUBSECTION]
 
 
 def load_glossary_df(name: str) -> pd.DataFrame:
     """Load and preprocess glossary DataFrame."""
-    df = pd.read_csv(f"glossary/{name}.csv")
-    prev_len = df.shape[0]
+    df = pd.read_csv(f"glossary/{name}.csv", usecols=GLOSSARY_COLS, sep=";")
+    had_duplicates = check_glossary_duplicates(df)
 
-    df = df.drop_duplicates("italiano", keep="first", ignore_index=True)
-    duplicated_rows = prev_len - df.shape[0]
-    print(f"DELETED {duplicated_rows} DUPLICATED ROWS")
+    # TODO: Implement language selection
+    df[COLUMN.TRANSLATION] = df[[COLUMN.SPANISH, COLUMN.ENGLISH]].apply(concat_langs, axis=1)
 
-    df = df.sort_values(["sezione", "sottosezione", "italiano"], ignore_index=True)
-    if duplicated_rows > 0:
-        df[["italiano", "traduzione", "sezione", "sottosezione"]].to_csv("new_glossario.csv", index=False)
+    df = df.sort_values([COLUMN.SECTION, COLUMN.SUBSECTION, COLUMN.ITALIAN], ignore_index=True)
+    if had_duplicates:
+        df[GLOSSARY_COLS].to_csv("new_glossario.csv", index=False, sep=";")
         print("Glossary without duplicates saved.")
+
+    df = df.drop([COLUMN.SPANISH, COLUMN.ENGLISH], axis=1)
     return df
 
 
@@ -39,23 +54,13 @@ def create_sections_subsections(
     """Create sections and subsections of the vocabulary.
     NOTE: df must already be alphabetically ordered.
     """
-    # Index: Start of tuple (s, ss) in glossary df
-    df_sss = df[["sezione", "sottosezione"]].drop_duplicates(keep="first")
-    n_ss = df_sss.shape[0]
-
-    # Index: Start of s in df_sss
-    df_s = df_sss["sezione"].reset_index(drop=True).drop_duplicates(keep="first")
-
-    sections = df_s.to_list()
-    ixs = df_s.index.to_list()
-    ixs_next = ixs[1:] + [-1]
-
+    df_sss, n_ss = process_sections_subsections(df)
+    sections, ixs, ixs_next = process_sections(df_sss)
     aux_dfs = {
         s: df_sss.iloc[ix:(n_ss if ix_next == -1 else ix_next)]
         for s, ix, ix_next in zip(sections, ixs, ixs_next)
     }
     subsections = {s: df_aux["sottosezione"].to_list() for s, df_aux in aux_dfs.items()}
-
     return sections, subsections, aux_dfs
 
 
@@ -79,60 +84,33 @@ def add_ids_to_vocab_df(
     """Add section and subsection ids to vocabulary df.
     NOTE: df must already be alphabetically ordered.
     """
-    df = df.drop(["sezione", "sottosezione"], axis=1)
-    df.loc[:, "sezione_id"] = -1
-    df.loc[:, "sottosezione_id"] = -1
-
-    sss_counts = [
-        len(ss_list) * [0]
-        for ss_list in subsections.values()
-    ]
-    sid_col_iat = df.columns.get_loc("sezione_id")
-    ssid_col_iat = df.columns.get_loc("sottosezione_id")
+    df = init_vocab_df(df)
+    sss_counts, sid_col_iat, ssid_col_iat = init_sss_counts(df, subsections)
 
     # We modify the original DataFrame with the information we now know
     zip_loop = enumerate(zip(orig_ixs.values(), start_ixs, next_start_ixs))
-    for s_id, (ss_ixs, start_ix, next_start_ix) in zip_loop:
-        end_ix = df.shape[0] if next_start_ix == -1 else next_start_ix
-        df.iloc[start_ix:end_ix, sid_col_iat] = s_id
-
-        next_ss_ixs = ss_ixs[1:] + [-1]
-        for ss_id, (ss_ix, next_ss_ix) in enumerate(zip(ss_ixs, next_ss_ixs)):
-            ss_end_ix = end_ix if next_ss_ix == -1 else next_ss_ix
-            df.iloc[ss_ix:ss_end_ix, ssid_col_iat] = ss_id
-            sss_counts[s_id][ss_id] = ss_end_ix - ss_ix
-
-    assert not (df["sezione_id"] == -1).any()
-    assert not (df["sottosezione_id"] == -1).any()
+    loop_add_ids(df, zip_loop, sid_col_iat, ssid_col_iat, sss_counts)
 
     return df, sss_counts
 
 
-def load_history(df: pd.DataFrame, glossary_name: str):
+def load_history(df: pd.DataFrame, glossary_name: str) -> pd.DataFrame:
+    """Load history DataFrame and merge it with the vocabulary DataFrame."""
     path_history = f"history/{glossary_name}.csv"
 
-    if os.path.exists(path_history):
+    if not os.path.exists(path_history):
+        init_empty_history(df)
+    else:
         df_history = pd.read_csv(path_history)
+        check_history_duplicates(df_history)
 
         df_history["last_ok"] = pd.to_datetime(df_history["last_ok"])
         df_history["last_not_ok"] = pd.to_datetime(df_history["last_not_ok"])
 
-        df = df.merge(df_history, how="left", on="italiano")
+        df = df.merge(df_history, how="left", on=COLUMN.ITALIAN)
         del df_history
 
-        mask_null = df["ok"].isnull()
-        if mask_null.any():
-            df.loc[mask_null, "ok"] = 0
-            df.loc[mask_null, "not_ok"] = 0
-            df = df.astype({"ok": int, "not_ok": int})
-
-            df.loc[mask_null, "last_ok"] = pd.to_datetime(dt.date.today())
-            df.loc[mask_null, "last_not_ok"] = pd.to_datetime(dt.date.today())
-    else:
-        df.loc[:, "ok"] = 0
-        df.loc[:, "not_ok"] = 0
-        df.loc[:, "last_ok"] = pd.to_datetime(dt.date.today())
-        df.loc[:, "last_not_ok"] = pd.to_datetime(dt.date.today())
+        handle_ok_nulls(df)
 
     return df
 
@@ -148,7 +126,7 @@ def open_glossary(
     dict["Section", list["Subsection"]],
     list[list[int]],
 ]:
-    """Open glossary file and convert it into Pythonic classes.
+    """Open glossary file and convert it into pythonic classes.
     CSV should have the columns: italiano, traduzione, sezione, sottosezione.
     """
     assert NAME_PATT.match(name)

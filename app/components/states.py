@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 
 from gradio import State as St
 
+from options import COLUMN
+
 if TYPE_CHECKING:
     from pandas import DataFrame
 
@@ -25,7 +27,7 @@ class SSStates:
         return tuple(state.value for state in self.to_list())
 
     def get_word(self, df_vocab: "DataFrame", is_foreign: bool) -> str:
-        col = "italiano" if is_foreign else "traduzione"
+        col = COLUMN.ITALIAN if is_foreign else COLUMN.TRANSLATION
         return df_vocab[col].iat[self.row_iat.value]
 
 
