@@ -7,4 +7,4 @@ ENGLISH     = "inglese"
 SECTION     = "sezione"
 SUBSECTION  = "sottosezione"
 
-TRANSLATION = "traduzione"
+TRANSLATION = "traduzione"  # Concatenation of Spanish and English translations

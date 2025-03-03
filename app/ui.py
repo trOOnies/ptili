@@ -88,7 +88,7 @@ def create_ui(
             outputs=row_comps + review_comps,
         )
 
-        with gr.Tab("Configure"):
+        with gr.Tab("Impostazioni"):
             with gr.Column():
                 for s_id, s in enumerate(sections):
                     gr.CheckboxGroup(

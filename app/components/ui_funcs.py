@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 GradioUpdate = dict[str, Any]
 
 ITA_LABEL = "Italiano 🇮🇹"
-TRAD_LABEL = "Traduzione 🇬🇧"
+TRAD_LABEL = "Traduzione 🇪🇸 🇬🇧"
 
 
 def toggle_buttons_interactivity(done: bool) -> list[GradioUpdate]:

@@ -1,6 +1,7 @@
 """Module for data utility functions."""
 
 import datetime as dt
+from math import isnan
 from typing import TYPE_CHECKING
 
 import pandas as pd
@@ -15,6 +16,10 @@ if TYPE_CHECKING:
 # load_glossary_df
 
 
+def check_na(val) -> bool:
+    return isinstance(val, float) and isnan(val)
+
+
 def check_glossary_duplicates(df: "DataFrame") -> bool:
     prev_len = df.shape[0]
     df.drop_duplicates(COLUMN.ITALIAN, keep="first", ignore_index=True, inplace=True)
@@ -24,9 +29,10 @@ def check_glossary_duplicates(df: "DataFrame") -> bool:
 
 
 def concat_langs(row: pd.Series) -> str:
-    if row[COLUMN.SPANISH] == "":
+    """Concatenate the two languages correspondingly."""
+    if check_na(row[COLUMN.SPANISH]):
         return row[COLUMN.ENGLISH]
-    elif row[COLUMN.ENGLISH] == "":
+    elif check_na(row[COLUMN.ENGLISH]):
         return row[COLUMN.SPANISH]
     else:
         return f"{row[COLUMN.SPANISH]}, {row[COLUMN.ENGLISH]}"
