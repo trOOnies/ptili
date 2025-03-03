@@ -1,8 +1,8 @@
 """Script for flashcards code."""
 
+from math import isclose
 from typing import TYPE_CHECKING
 
-from math import isclose
 import numpy as np
 
 if TYPE_CHECKING:
